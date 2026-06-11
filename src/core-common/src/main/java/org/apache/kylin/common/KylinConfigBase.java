@@ -2323,8 +2323,26 @@ public abstract class KylinConfigBase implements Serializable {
         String value = getOptional("kylin.query.transformers");
         return value == null ? new String[] { POWER_BI_CONVERTER, "org.apache.kylin.query.util.DefaultQueryTransformer",
                 "org.apache.kylin.query.util.EscapeTransformer", "org.apache.kylin.query.util.ConvertToComputedColumn",
-                "org.apache.kylin.query.util.KeywordDefaultDirtyHack", "org.apache.kylin.query.security.RowFilter" }
+                "org.apache.kylin.query.util.KeywordDefaultDirtyHack",
+                "org.apache.kylin.query.util.DorisSqlDialectConverter",
+                "org.apache.kylin.query.util.DorisMvRewriteTransformer", "org.apache.kylin.query.security.RowFilter" }
                 : getOptionalStringArray("kylin.query.transformers", new String[0]);
+    }
+
+    public boolean isDorisSqlDialectTransformEnabled() {
+        return Boolean.parseBoolean(this.getOptional("kylin.query.doris-sql-transform-enabled", FALSE));
+    }
+
+    public boolean isDorisMvRewriteEnabled() {
+        return Boolean.parseBoolean(this.getOptional("kylin.query.doris-mv-rewrite-enabled", FALSE));
+    }
+
+    public String getDorisMvRewriteMetadataJson() {
+        return this.getOptional("kylin.query.doris-mv-rewrite-metadata-json", "[]");
+    }
+
+    public long getDorisMvRewriteMaxStalenessSeconds() {
+        return Long.parseLong(this.getOptional("kylin.query.doris-mv-rewrite-max-staleness-seconds", "-1"));
     }
 
     public String getPartitionCheckRunnerClassName() {
@@ -2587,6 +2605,8 @@ public abstract class KylinConfigBase implements Serializable {
                         "org.apache.kylin.query.util.RestoreFromComputedColumn",
                         "org.apache.kylin.query.security.RowFilter",
                         "org.apache.kylin.query.security.HackSelectStarWithColumnACL",
+                        "org.apache.kylin.query.util.DorisSqlDialectConverter",
+                        "org.apache.kylin.query.util.DorisMvRewriteTransformer",
                         "org.apache.kylin.query.util.SchemaConverter",
                         "org.apache.kylin.query.util.SparkSQLFunctionConverter" });
     }

@@ -419,6 +419,18 @@ class KylinConfigBaseTest {
 
         map.put("getQueryTransformers", new PropertiesEntity("kylin.query.transformers", "", new String[0]));
 
+        map.put("isDorisSqlDialectTransformEnabled",
+                new PropertiesEntity("kylin.query.doris-sql-transform-enabled", "false", false));
+
+        map.put("isDorisMvRewriteEnabled",
+                new PropertiesEntity("kylin.query.doris-mv-rewrite-enabled", "false", false));
+
+        map.put("getDorisMvRewriteMetadataJson",
+                new PropertiesEntity("kylin.query.doris-mv-rewrite-metadata-json", "[]", "[]"));
+
+        map.put("getDorisMvRewriteMaxStalenessSeconds",
+                new PropertiesEntity("kylin.query.doris-mv-rewrite-max-staleness-seconds", "-1", -1L));
+
         map.put("getQueryInterceptors", new PropertiesEntity("kylin.query.interceptors", "", new String[0]));
 
         map.put("getQueryDurationCacheThreshold",
@@ -464,6 +476,8 @@ class KylinConfigBaseTest {
                                 "org.apache.kylin.query.util.RestoreFromComputedColumn",
                                 "org.apache.kylin.query.security.RowFilter",
                                 "org.apache.kylin.query.security.HackSelectStarWithColumnACL",
+                                "org.apache.kylin.query.util.DorisSqlDialectConverter",
+                                "org.apache.kylin.query.util.DorisMvRewriteTransformer",
                                 "org.apache.kylin.query.util.SchemaConverter",
                                 "org.apache.kylin.query.util.SparkSQLFunctionConverter" }));
 
