@@ -62,10 +62,12 @@ public class DorisMvRewriteTransformer implements IQueryTransformer, IPushDownCo
     private static final Pattern COUNT_DISTINCT_PATTERN = Pattern.compile("(?is)\\bcount\\s*\\(\\s*distinct\\b");
     private static final Pattern COUNT_PATTERN = Pattern.compile("(?is)\\bcount\\s*\\(");
     private static final Pattern SUM_PATTERN = Pattern.compile("(?is)\\bsum\\s*\\(");
+    private static final Pattern WINDOW_FUNCTION_PATTERN = Pattern.compile("(?is)\\bover\\s*\\(");
     // Candidate ranking constants: unknown row count should be heavily penalized,
     // then additional penalties for join complexity and group-by complexity.
     private static final double JOIN_PENALTY_WEIGHT = 1_000_000D;
     private static final double GROUP_BY_PENALTY_WEIGHT = 100_000D;
+    // Keep large enough to discourage unknown-row-count candidates while avoiding overflow in subsequent math.
     private static final long UNKNOWN_ROW_COUNT_SUBSTITUTE = Long.MAX_VALUE / 4;
 
     @Override
@@ -112,7 +114,8 @@ public class DorisMvRewriteTransformer implements IQueryTransformer, IPushDownCo
 
     private boolean isSupportedSubset(String sql) {
         String normalized = StringUtils.trim(sql).toLowerCase(Locale.ROOT);
-        return normalized.startsWith("select") && !normalized.contains(" union ") && !normalized.contains(" over(")
+        return normalized.startsWith("select") && !normalized.contains(" union ")
+                && !WINDOW_FUNCTION_PATTERN.matcher(normalized).find()
                 && !normalized.contains(" with ");
     }
 
@@ -195,7 +198,8 @@ public class DorisMvRewriteTransformer implements IQueryTransformer, IPushDownCo
             return false;
         }
         Set<String> normalizedJoinSignatures = normalizeSet(candidate.joinSignatures, this::normalizeExpression);
-        // Empty candidate join signatures mean "no strict join-signature constraint".
+        // Empty candidate join signatures mean "no strict join-signature constraint"
+        // (intentional for denormalized or pre-joined MVs).
         if (!normalizedJoinSignatures.isEmpty() && !normalizedJoinSignatures.containsAll(pattern.joinSignatures)) {
             return false;
         }
@@ -214,7 +218,9 @@ public class DorisMvRewriteTransformer implements IQueryTransformer, IPushDownCo
         if (candidate.refreshTime <= 0L) {
             return false;
         }
-        return now - candidate.refreshTime <= maxStalenessSeconds * 1000L;
+        long maxStalenessMillis = maxStalenessSeconds > Long.MAX_VALUE / 1000 ? Long.MAX_VALUE
+                : maxStalenessSeconds * 1000L;
+        return now - candidate.refreshTime <= maxStalenessMillis;
     }
 
     private boolean isSafeToRewrite(DorisMvMetadata candidate) {
@@ -225,8 +231,10 @@ public class DorisMvRewriteTransformer implements IQueryTransformer, IPushDownCo
     private double estimateCost(DorisMvMetadata candidate, DorisQueryPattern pattern) {
         long rowCost = candidate.rowCount <= 0 ? UNKNOWN_ROW_COUNT_SUBSTITUTE : candidate.rowCount;
         double pruningPenalty = Math.max(0D, 1D - candidate.partitionPruningRatio) * rowCost;
-        double joinPenalty = pattern.joinSignatures.size() * JOIN_PENALTY_WEIGHT;
-        double groupPenalty = pattern.groupByColumns.size() * GROUP_BY_PENALTY_WEIGHT;
+        double joinPenalty = Math.max(0, safeSize(candidate.joinSignatures) - pattern.joinSignatures.size())
+                * JOIN_PENALTY_WEIGHT;
+        double groupPenalty = Math.max(0, safeSize(candidate.dimensions) - pattern.groupByColumns.size())
+                * GROUP_BY_PENALTY_WEIGHT;
         return rowCost + pruningPenalty + joinPenalty + groupPenalty;
     }
 
