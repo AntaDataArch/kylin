@@ -476,10 +476,10 @@ class KylinConfigBaseTest {
                                 "org.apache.kylin.query.util.RestoreFromComputedColumn",
                                 "org.apache.kylin.query.security.RowFilter",
                                 "org.apache.kylin.query.security.HackSelectStarWithColumnACL",
-                                "org.apache.kylin.query.util.DorisSqlDialectConverter",
-                                "org.apache.kylin.query.util.DorisMvRewriteTransformer",
                                 "org.apache.kylin.query.util.SchemaConverter",
-                                "org.apache.kylin.query.util.SparkSQLFunctionConverter" }));
+                                "org.apache.kylin.query.util.SparkSQLFunctionConverter",
+                                "org.apache.kylin.query.util.DorisSqlDialectConverter",
+                                "org.apache.kylin.query.util.DorisMvRewriteTransformer" }));
 
         map.put("isPushdownQueryCacheEnabled",
                 new PropertiesEntity("kylin.query.pushdown.cache-enabled", "false", false));

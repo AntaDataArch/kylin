@@ -62,6 +62,8 @@ public class DorisMvRewriteTransformer implements IQueryTransformer, IPushDownCo
     private static final Pattern COUNT_DISTINCT_PATTERN = Pattern.compile("(?is)\\bcount\\s*\\(\\s*distinct\\b");
     private static final Pattern COUNT_PATTERN = Pattern.compile("(?is)\\bcount\\s*\\(");
     private static final Pattern SUM_PATTERN = Pattern.compile("(?is)\\bsum\\s*\\(");
+    // Candidate ranking constants: unknown row count should be heavily penalized,
+    // then additional penalties for join complexity and group-by complexity.
     private static final double JOIN_PENALTY_WEIGHT = 1_000_000D;
     private static final double GROUP_BY_PENALTY_WEIGHT = 100_000D;
     private static final long UNKNOWN_ROW_COUNT_PENALTY = Long.MAX_VALUE / 4;

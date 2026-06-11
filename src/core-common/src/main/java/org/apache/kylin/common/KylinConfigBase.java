@@ -2323,9 +2323,9 @@ public abstract class KylinConfigBase implements Serializable {
         String value = getOptional("kylin.query.transformers");
         return value == null ? new String[] { POWER_BI_CONVERTER, "org.apache.kylin.query.util.DefaultQueryTransformer",
                 "org.apache.kylin.query.util.EscapeTransformer", "org.apache.kylin.query.util.ConvertToComputedColumn",
-                "org.apache.kylin.query.util.KeywordDefaultDirtyHack",
+                "org.apache.kylin.query.util.KeywordDefaultDirtyHack", "org.apache.kylin.query.security.RowFilter",
                 "org.apache.kylin.query.util.DorisSqlDialectConverter",
-                "org.apache.kylin.query.util.DorisMvRewriteTransformer", "org.apache.kylin.query.security.RowFilter" }
+                "org.apache.kylin.query.util.DorisMvRewriteTransformer" }
                 : getOptionalStringArray("kylin.query.transformers", new String[0]);
     }
 
@@ -2342,6 +2342,7 @@ public abstract class KylinConfigBase implements Serializable {
     }
 
     public long getDorisMvRewriteMaxStalenessSeconds() {
+        // -1 means no staleness check.
         return Long.parseLong(this.getOptional("kylin.query.doris-mv-rewrite-max-staleness-seconds", "-1"));
     }
 
@@ -2605,10 +2606,10 @@ public abstract class KylinConfigBase implements Serializable {
                         "org.apache.kylin.query.util.RestoreFromComputedColumn",
                         "org.apache.kylin.query.security.RowFilter",
                         "org.apache.kylin.query.security.HackSelectStarWithColumnACL",
-                        "org.apache.kylin.query.util.DorisSqlDialectConverter",
-                        "org.apache.kylin.query.util.DorisMvRewriteTransformer",
                         "org.apache.kylin.query.util.SchemaConverter",
-                        "org.apache.kylin.query.util.SparkSQLFunctionConverter" });
+                        "org.apache.kylin.query.util.SparkSQLFunctionConverter",
+                        "org.apache.kylin.query.util.DorisSqlDialectConverter",
+                        "org.apache.kylin.query.util.DorisMvRewriteTransformer" });
     }
 
     public String getQueryIndexMatchRules() {
