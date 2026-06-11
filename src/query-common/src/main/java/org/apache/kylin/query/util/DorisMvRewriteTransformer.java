@@ -62,6 +62,9 @@ public class DorisMvRewriteTransformer implements IQueryTransformer, IPushDownCo
     private static final Pattern COUNT_DISTINCT_PATTERN = Pattern.compile("(?is)\\bcount\\s*\\(\\s*distinct\\b");
     private static final Pattern COUNT_PATTERN = Pattern.compile("(?is)\\bcount\\s*\\(");
     private static final Pattern SUM_PATTERN = Pattern.compile("(?is)\\bsum\\s*\\(");
+    private static final double JOIN_PENALTY_WEIGHT = 1_000_000D;
+    private static final double GROUP_BY_PENALTY_WEIGHT = 100_000D;
+    private static final long UNKNOWN_ROW_COUNT_PENALTY = Long.MAX_VALUE / 4;
 
     @Override
     public String transform(String sql, String project, String defaultSchema) {
@@ -217,10 +220,10 @@ public class DorisMvRewriteTransformer implements IQueryTransformer, IPushDownCo
     }
 
     private double estimateCost(DorisMvMetadata candidate, DorisQueryPattern pattern) {
-        long rowCost = candidate.rowCount <= 0 ? Long.MAX_VALUE / 4 : candidate.rowCount;
+        long rowCost = candidate.rowCount <= 0 ? UNKNOWN_ROW_COUNT_PENALTY : candidate.rowCount;
         double pruningPenalty = Math.max(0D, 1D - candidate.partitionPruningRatio) * rowCost;
-        double joinPenalty = pattern.joinSignatures.size() * 1_000_000D;
-        double groupPenalty = pattern.groupByColumns.size() * 100_000D;
+        double joinPenalty = pattern.joinSignatures.size() * JOIN_PENALTY_WEIGHT;
+        double groupPenalty = pattern.groupByColumns.size() * GROUP_BY_PENALTY_WEIGHT;
         return rowCost + pruningPenalty + joinPenalty + groupPenalty;
     }
 
@@ -313,7 +316,7 @@ public class DorisMvRewriteTransformer implements IQueryTransformer, IPushDownCo
         public boolean permissionGranted = true;
         public boolean partitionAvailable = true;
         public boolean columnTypeCompatible = true;
-        public long rowCount = Long.MAX_VALUE;
+        public long rowCount = -1L;
         public double partitionPruningRatio = 1.0D;
     }
 }
