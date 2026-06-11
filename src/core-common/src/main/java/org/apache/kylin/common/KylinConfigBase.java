@@ -2343,7 +2343,13 @@ public abstract class KylinConfigBase implements Serializable {
 
     public long getDorisMvRewriteMaxStalenessSeconds() {
         // -1 means no staleness check.
-        return Long.parseLong(this.getOptional("kylin.query.doris-mv-rewrite-max-staleness-seconds", "-1"));
+        String value = this.getOptional("kylin.query.doris-mv-rewrite-max-staleness-seconds", "-1");
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(
+                    "Invalid value for kylin.query.doris-mv-rewrite-max-staleness-seconds: " + value, ex);
+        }
     }
 
     public String getPartitionCheckRunnerClassName() {

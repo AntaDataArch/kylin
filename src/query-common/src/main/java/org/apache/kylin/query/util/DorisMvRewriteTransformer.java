@@ -63,8 +63,10 @@ public class DorisMvRewriteTransformer implements IQueryTransformer, IPushDownCo
     private static final Pattern COUNT_PATTERN = Pattern.compile("(?is)\\bcount\\s*\\(");
     private static final Pattern SUM_PATTERN = Pattern.compile("(?is)\\bsum\\s*\\(");
     private static final Pattern WINDOW_FUNCTION_PATTERN = Pattern.compile("(?is)\\bover\\s*\\(");
+    private static final long MAX_STALENESS_SECONDS_OVERFLOW_THRESHOLD = Long.MAX_VALUE / 1000L;
     // Candidate ranking constants: unknown row count should be heavily penalized,
     // then additional penalties for join complexity and group-by complexity.
+    // 1 extra join signature ~= 1,000,000 row penalty; 1 extra dimension ~= 100,000 row penalty.
     private static final double JOIN_PENALTY_WEIGHT = 1_000_000D;
     private static final double GROUP_BY_PENALTY_WEIGHT = 100_000D;
     // Keep large enough to discourage unknown-row-count candidates while avoiding overflow in subsequent math.
@@ -218,7 +220,7 @@ public class DorisMvRewriteTransformer implements IQueryTransformer, IPushDownCo
         if (candidate.refreshTime <= 0L) {
             return false;
         }
-        long maxStalenessMillis = maxStalenessSeconds > Long.MAX_VALUE / 1000 ? Long.MAX_VALUE
+        long maxStalenessMillis = maxStalenessSeconds > MAX_STALENESS_SECONDS_OVERFLOW_THRESHOLD ? Long.MAX_VALUE
                 : maxStalenessSeconds * 1000L;
         return now - candidate.refreshTime <= maxStalenessMillis;
     }
