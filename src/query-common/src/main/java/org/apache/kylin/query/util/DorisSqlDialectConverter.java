@@ -40,7 +40,6 @@ public class DorisSqlDialectConverter implements IQueryTransformer, IPushDownCon
     public String transform(String sql, String project, String defaultSchema) {
         return convert(sql, project, defaultSchema);
     }
-
     @Override
     public String convert(String originSql, String project, String defaultSchema) {
         if (StringUtils.isBlank(originSql)) {

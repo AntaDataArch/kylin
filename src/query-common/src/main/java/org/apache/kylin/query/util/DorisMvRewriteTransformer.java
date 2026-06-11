@@ -66,7 +66,7 @@ public class DorisMvRewriteTransformer implements IQueryTransformer, IPushDownCo
     // then additional penalties for join complexity and group-by complexity.
     private static final double JOIN_PENALTY_WEIGHT = 1_000_000D;
     private static final double GROUP_BY_PENALTY_WEIGHT = 100_000D;
-    private static final long UNKNOWN_ROW_COUNT_PENALTY = Long.MAX_VALUE / 4;
+    private static final long UNKNOWN_ROW_COUNT_SUBSTITUTE = Long.MAX_VALUE / 4;
 
     @Override
     public String transform(String sql, String project, String defaultSchema) {
@@ -195,6 +195,7 @@ public class DorisMvRewriteTransformer implements IQueryTransformer, IPushDownCo
             return false;
         }
         Set<String> normalizedJoinSignatures = normalizeSet(candidate.joinSignatures, this::normalizeExpression);
+        // Empty candidate join signatures mean "no strict join-signature constraint".
         if (!normalizedJoinSignatures.isEmpty() && !normalizedJoinSignatures.containsAll(pattern.joinSignatures)) {
             return false;
         }
@@ -222,7 +223,7 @@ public class DorisMvRewriteTransformer implements IQueryTransformer, IPushDownCo
     }
 
     private double estimateCost(DorisMvMetadata candidate, DorisQueryPattern pattern) {
-        long rowCost = candidate.rowCount <= 0 ? UNKNOWN_ROW_COUNT_PENALTY : candidate.rowCount;
+        long rowCost = candidate.rowCount <= 0 ? UNKNOWN_ROW_COUNT_SUBSTITUTE : candidate.rowCount;
         double pruningPenalty = Math.max(0D, 1D - candidate.partitionPruningRatio) * rowCost;
         double joinPenalty = pattern.joinSignatures.size() * JOIN_PENALTY_WEIGHT;
         double groupPenalty = pattern.groupByColumns.size() * GROUP_BY_PENALTY_WEIGHT;

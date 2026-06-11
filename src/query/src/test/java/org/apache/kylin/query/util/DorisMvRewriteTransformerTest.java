@@ -39,7 +39,6 @@ class DorisMvRewriteTransformerTest {
                     trimAndCompactWhitespaces(rewritten));
         }
     }
-
     @Test
     void testRewriteSelectsBestCandidate() {
         KylinConfig config = KylinConfig.createKylinConfig(new Properties());
@@ -95,4 +94,3 @@ class DorisMvRewriteTransformerTest {
         return sql.replaceAll("\\s+", " ").trim();
     }
 }
-
