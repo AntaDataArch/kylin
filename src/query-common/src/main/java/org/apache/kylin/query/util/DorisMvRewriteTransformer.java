@@ -220,7 +220,7 @@ public class DorisMvRewriteTransformer implements IQueryTransformer, IPushDownCo
         if (candidate.refreshTime <= 0L) {
             return false;
         }
-        long maxStalenessMillis = maxStalenessSeconds > MAX_STALENESS_SECONDS_OVERFLOW_THRESHOLD ? Long.MAX_VALUE
+        long maxStalenessMillis = maxStalenessSeconds >= MAX_STALENESS_SECONDS_OVERFLOW_THRESHOLD ? Long.MAX_VALUE
                 : maxStalenessSeconds * 1000L;
         return now - candidate.refreshTime <= maxStalenessMillis;
     }
@@ -231,7 +231,7 @@ public class DorisMvRewriteTransformer implements IQueryTransformer, IPushDownCo
     }
 
     private double estimateCost(DorisMvMetadata candidate, DorisQueryPattern pattern) {
-        long rowCost = candidate.rowCount <= 0 ? UNKNOWN_ROW_COUNT_SUBSTITUTE : candidate.rowCount;
+        long rowCost = candidate.rowCount < 0 ? UNKNOWN_ROW_COUNT_SUBSTITUTE : candidate.rowCount;
         double pruningPenalty = Math.max(0D, 1D - candidate.partitionPruningRatio) * rowCost;
         double joinPenalty = Math.max(0, safeSize(candidate.joinSignatures) - pattern.joinSignatures.size())
                 * JOIN_PENALTY_WEIGHT;
